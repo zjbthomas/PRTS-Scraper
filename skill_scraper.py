@@ -34,7 +34,7 @@ def extract_operator_names(operator_list_title):
     return extracted
 
 def extract_skill_info(operator_name):
-    print(f"Extracting skills for operator: {operator_name}")
+    #print(f"Extracting skills for operator: {operator_name}")
 
     params = {
         "action": "parse",
@@ -67,30 +67,57 @@ def extract_skill_info(operator_name):
     # remove duplicates
     results = list(dict.fromkeys(results))
 
+    extracted = []
+
     skill_idx = 0
     for url, skill_name in results:
             skill_idx += 1
 
-            filename = os.path.join(SAVE_DIR, f"{operator_name}_{skill_idx}.png")
+            filename = f"{operator_name}_{skill_idx}.png"
 
+            extracted.append((filename, url))
+
+    if (skill_idx == 0):
+        print("No skills found for", operator_name)
+    else:
+        print(f"Found {len(extracted)} skills for {operator_name}")
+
+    return extracted
+
+def download_skill_imgs(collected):
+    for filename, url in collected:
+        filename = os.path.join(SAVE_DIR, filename)
+
+        if not os.path.exists(filename):
             response = requests.get(url, stream=True)
             if response.status_code == 200:
                 with open(filename, "wb") as f:
                     for chunk in response.iter_content(1024):
                         f.write(chunk)
-                print(f"Saved skill {skill_idx} {skill_name} for {operator_name}")
+                print(f"Downloaded {filename}")
             else:
                 print("Failed to download image:", response.status_code)
-    
-    if (skill_idx == 0):
-        print("No skills found for", operator_name)
-
-if os.path.exists(SAVE_DIR):
-    shutil.rmtree(SAVE_DIR)
 
 os.makedirs(SAVE_DIR, exist_ok=True)
 
 operators = extract_operator_names("干员一览")
 
-for operator in operators:
-    extract_skill_info(operator)
+skill_filename = os.path.join(SAVE_DIR, "skills.txt")
+
+skills = []
+if (os.path.exists(skill_filename)):
+    with open(skill_filename, "r") as f:
+        for line in f:
+            filename, url = line.strip().split(",")
+            skills.append((filename, url))
+else:
+    for operator in operators:
+        skills.extend(extract_skill_info(operator))
+
+    with open("skills.txt", "w") as f:
+        for filename, url in skills:
+            f.write(f"{filename},{url}\n")
+
+print(f"Total skills collected: {len(skills)} from {len(operators)} operators")
+
+download_skill_imgs(skills)
