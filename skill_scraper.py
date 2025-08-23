@@ -114,7 +114,7 @@ else:
     for operator in operators:
         skills.extend(extract_skill_info(operator))
 
-    with open("skills.txt", "w") as f:
+    with open(skill_filename, "w") as f:
         for filename, url in skills:
             f.write(f"{filename},{url}\n")
 
